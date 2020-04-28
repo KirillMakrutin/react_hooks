@@ -4,10 +4,13 @@ import Card from "../UI/Card";
 import "./IngredientForm.css";
 
 const IngredientForm = React.memo((props) => {
-  const [ingredientState, setIngredientState] = useState({
-    title: "",
-    amount: "",
-  });
+  // const [ingredientState, setIngredientState] = useState({
+  //   title: "",
+  //   amount: "",
+  // });
+
+  const [titleState, setTitleState] = useState("");
+  const [amountState, setAmountState] = useState("");
 
   const submitHandler = (event) => {
     event.preventDefault();
@@ -15,21 +18,25 @@ const IngredientForm = React.memo((props) => {
   };
 
   const handleTitleChange = (event) => {
-    const newTitle = event.target.value;
+    // const newTitle = event.target.value;
 
-    setIngredientState((oldIngredientState) => ({
-      ...oldIngredientState,
-      title: newTitle,
-    }));
+    // setIngredientState((oldIngredientState) => ({
+    //   ...oldIngredientState,
+    //   title: newTitle,
+    // }));
+
+    setTitleState(event.target.value);
   };
 
   const handleAmountChange = (event) => {
-    const newAmount = event.target.value;
+    // const newAmount = event.target.value;
 
-    setIngredientState((oldIngredientState) => ({
-      ...oldIngredientState,
-      amount: newAmount,
-    }));
+    // setIngredientState((oldIngredientState) => ({
+    //   ...oldIngredientState,
+    //   amount: newAmount,
+    // }));
+
+    setAmountState(event.target.value);
   };
 
   return (
@@ -41,7 +48,8 @@ const IngredientForm = React.memo((props) => {
             <input
               type="text"
               id="title"
-              value={ingredientState.title}
+              // value={ingredientState.title}
+              value={titleState}
               onChange={handleTitleChange}
             />
           </div>
@@ -50,7 +58,8 @@ const IngredientForm = React.memo((props) => {
             <input
               type="number"
               id="amount"
-              value={ingredientState.amount}
+              // value={ingredientState.amount}
+              value={amountState}
               onChange={handleAmountChange}
             />
           </div>
