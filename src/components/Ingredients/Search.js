@@ -1,32 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import Card from "../UI/Card";
 import "./Search.css";
 
 const Search = React.memo(({ onLoadIngredients }) => {
   const [enteredFilter, setEnteredFilter] = useState("");
+  const inputRef = useRef();
 
   useEffect(() => {
     // to make it works you should add FB rule:
     // "ingredients":{
     //   ".indexOn":["title"]
     // }
-    const query = enteredFilter.length === 0 ? '' : `?orderBy="title"&equalTo="${enteredFilter}"`;
-    fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json${query}`)
-      .then((resp) => resp.json())
-      .then((respData) => {
-        const loadedIngredients = [];
+    setTimeout(() => {
+      // do search if user stop typing 500 mls ago (entered value that was 500 mls ago)
+      if (enteredFilter === inputRef.current.value) {
+        const query =
+          enteredFilter.length === 0
+            ? ""
+            : `?orderBy="title"&equalTo="${enteredFilter}"`;
+        fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json${query}`)
+          .then((resp) => resp.json())
+          .then((respData) => {
+            const loadedIngredients = [];
 
-        for (let key in respData) {
-          loadedIngredients.push({
-            id: key,
-            ...respData[key],
+            for (let key in respData) {
+              loadedIngredients.push({
+                id: key,
+                ...respData[key],
+              });
+            }
+
+            onLoadIngredients(loadedIngredients);
           });
-        }
-
-        onLoadIngredients(loadedIngredients);
-      });
-  }, [enteredFilter, onLoadIngredients]);
+      }
+    }, 500);
+  }, [enteredFilter, onLoadIngredients, inputRef]);
 
   return (
     <section className="search">
@@ -34,6 +43,7 @@ const Search = React.memo(({ onLoadIngredients }) => {
         <div className="search-input">
           <label>Filter by Title</label>
           <input
+            ref={inputRef}
             type="text"
             value={enteredFilter}
             onChange={(event) => setEnteredFilter(event.target.value)}
