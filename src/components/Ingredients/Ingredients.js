@@ -14,13 +14,27 @@ const Ingredients = () => {
   };
 
   const addIngredientHandler = (ingredient) => {
-    setUserIngredients((previousUserIngredients) => [
-      ...previousUserIngredients,
-      {
-        id: Math.random().toString(),
-        ...ingredient,
+    console.log("Saving ingredient: ", ingredient);
+
+    fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json`, {
+      method: "POST",
+      body: JSON.stringify(ingredient),
+      headers: {
+        "Content-Type": "application/json",
       },
-    ]);
+    })
+      .then((resp) => resp.json())
+      .then((body) => {
+        console.log("Saved ingredient name: ", body);
+
+        setUserIngredients((previousUserIngredients) => [
+          ...previousUserIngredients,
+          {
+            id: body.name,
+            ...ingredient,
+          },
+        ]);
+      });
   };
 
   return (
