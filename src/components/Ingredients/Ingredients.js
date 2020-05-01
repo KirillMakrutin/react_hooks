@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -6,6 +6,27 @@ import Search from "./Search";
 
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
+
+  useEffect(
+    () => {
+      fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json`)
+        .then((resp) => resp.json())
+        .then((respData) => {
+          const loadedIngredients = [];
+
+          for (let key in respData) {
+            loadedIngredients.push({
+              id: key,
+              ...respData[key],
+            });
+          }
+
+          setUserIngredients(loadedIngredients);
+        });
+    },
+    // adding a second argument make hook acts as componentDidMount (without - like componentDidUpdate for each render cycle)
+    []
+  );
 
   const removeIngredientHandler = (id) => {
     setUserIngredients((previousUserIngredients) =>
