@@ -1,12 +1,34 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import ErrorModal from "../UI/ErrorModal";
 import Search from "./Search";
 
+// regular funtion is defined outside to not recreate during re-redner
+const ingredientReducer = (currentIngredients, action) => {
+  console.log("Currnet ingredients and action:", currentIngredients, action);
+
+  switch (action.type) {
+    case "SET":
+      // returns new state;
+      return action.ingredients;
+    case "DELETE":
+      return currentIngredients.filter(
+        (ingredient) => ingredient.id !== action.id
+      );
+    case "ADD":
+      return [...currentIngredients, action.ingredient];
+    default:
+      throw new Error("Illegal Action!");
+  }
+};
+
 const Ingredients = () => {
-  const [userIngredients, setUserIngredients] = useState([]);
+  // 2nd arg is an initial state
+  const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+
+  // const [userIngredients, setUserIngredients] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState();
 
@@ -32,10 +54,13 @@ const Ingredients = () => {
   //   []
   // );
 
-  const filteredIngredientsHandler = useCallback(
-    (filteredIngredients) => setUserIngredients(filteredIngredients),
-    []
-  );
+  const filteredIngredientsHandler = useCallback((filteredIngredients) => {
+    // setUserIngredients(filteredIngredients);
+    dispatch({
+      type: "SET",
+      ingredients: filteredIngredients,
+    });
+  }, []);
 
   const removeIngredientHandler = (id) => {
     setIsLoading(true);
@@ -44,9 +69,13 @@ const Ingredients = () => {
       method: "DELETE",
     })
       .then((resp) => {
-        setUserIngredients((previousUserIngredients) =>
-          previousUserIngredients.filter((ingredient) => ingredient.id !== id)
-        );
+        dispatch({
+          type: "DELETE",
+          id: id,
+        });
+        // setUserIngredients((previousUserIngredients) =>
+        //   previousUserIngredients.filter((ingredient) => ingredient.id !== id)
+        // );
       })
       .catch((error) => {
         setError(error.message);
@@ -75,13 +104,21 @@ const Ingredients = () => {
       .then((body) => {
         console.log("Saved ingredient name: ", body);
 
-        setUserIngredients((previousUserIngredients) => [
-          ...previousUserIngredients,
-          {
+        dispatch({
+          type: "ADD",
+          ingredient: {
             id: body.name,
             ...ingredient,
           },
-        ]);
+        });
+
+        // setUserIngredients((previousUserIngredients) => [
+        //   ...previousUserIngredients,
+        //   {
+        //     id: body.name,
+        //     ...ingredient,
+        //   },
+        // ]);
       });
   };
 
