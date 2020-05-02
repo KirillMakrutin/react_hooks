@@ -6,6 +6,7 @@ import Search from "./Search";
 
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // do load in Search component
   // useEffect(
@@ -35,9 +36,12 @@ const Ingredients = () => {
   );
 
   const removeIngredientHandler = (id) => {
+    setIsLoading(true);
+
     fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
       method: "DELETE",
     }).then((resp) => {
+      setIsLoading(false);
       setUserIngredients((previousUserIngredients) =>
         previousUserIngredients.filter((ingredient) => ingredient.id !== id)
       );
@@ -45,6 +49,8 @@ const Ingredients = () => {
   };
 
   const addIngredientHandler = (ingredient) => {
+    setIsLoading(true);
+
     console.log("Saving ingredient: ", ingredient);
 
     fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json`, {
@@ -54,7 +60,10 @@ const Ingredients = () => {
         "Content-Type": "application/json",
       },
     })
-      .then((resp) => resp.json())
+      .then((resp) => {
+        setIsLoading(false);
+        return resp.json();
+      })
       .then((body) => {
         console.log("Saved ingredient name: ", body);
 
@@ -70,7 +79,10 @@ const Ingredients = () => {
 
   return (
     <div className="App">
-      <IngredientForm onAddIngredient={addIngredientHandler} />
+      <IngredientForm
+        onAddIngredient={addIngredientHandler}
+        loading={isLoading}
+      />
 
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
