@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
+import ErrorModal from "../UI/ErrorModal";
 import Search from "./Search";
 
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState();
 
   // do load in Search component
   // useEffect(
@@ -40,12 +42,18 @@ const Ingredients = () => {
 
     fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
       method: "DELETE",
-    }).then((resp) => {
-      setIsLoading(false);
-      setUserIngredients((previousUserIngredients) =>
-        previousUserIngredients.filter((ingredient) => ingredient.id !== id)
-      );
-    });
+    })
+      .then((resp) => {
+        setUserIngredients((previousUserIngredients) =>
+          previousUserIngredients.filter((ingredient) => ingredient.id !== id)
+        );
+      })
+      .catch((error) => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const addIngredientHandler = (ingredient) => {
@@ -77,8 +85,12 @@ const Ingredients = () => {
       });
   };
 
+  const clearErrorHandler = () => setError();
+
   return (
     <div className="App">
+      {error && <ErrorModal onClose={clearErrorHandler}>{error}</ErrorModal>}
+
       <IngredientForm
         onAddIngredient={addIngredientHandler}
         loading={isLoading}
