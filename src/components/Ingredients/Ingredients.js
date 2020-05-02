@@ -35,9 +35,13 @@ const Ingredients = () => {
   );
 
   const removeIngredientHandler = (id) => {
-    setUserIngredients((previousUserIngredients) =>
-      previousUserIngredients.filter((ingredient) => ingredient.id !== id)
-    );
+    fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
+      method: "DELETE",
+    }).then((resp) => {
+      setUserIngredients((previousUserIngredients) =>
+        previousUserIngredients.filter((ingredient) => ingredient.id !== id)
+      );
+    });
   };
 
   const addIngredientHandler = (ingredient) => {
