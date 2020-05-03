@@ -5,7 +5,7 @@ import IngredientList from "./IngredientList";
 import ErrorModal from "../UI/ErrorModal";
 import Search from "./Search";
 
-// regular funtion is defined outside to not recreate during re-redner
+// regular funtion is defined outside to not recreate during re-redner (it can also be located inside if we depends on props)
 const ingredientReducer = (currentIngredients, action) => {
   console.log("Currnet ingredients and action:", currentIngredients, action);
 
@@ -24,13 +24,35 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 };
 
+const httpReducer = (currentHttpState, action) => {
+  switch (action.type) {
+    case "SEND":
+      return { loading: true, error: null };
+    case "RESPONSE":
+      return { ...currentHttpState, loading: false };
+    case "ERROR":
+      return { loading: false, error: action.error };
+    case "CLEAR":
+      return {
+        ...currentHttpState,
+        error: null,
+      };
+    default:
+      throw new Error("Illegal Action!");
+  }
+};
+
 const Ingredients = () => {
   // 2nd arg is an initial state
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+  const [httpState, dispatchHttp] = useReducer(httpReducer, {
+    loading: false,
+    error: null,
+  });
 
   // const [userIngredients, setUserIngredients] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState();
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState();
 
   // do load in Search component
   // useEffect(
@@ -63,12 +85,13 @@ const Ingredients = () => {
   }, []);
 
   const removeIngredientHandler = (id) => {
-    setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
 
     fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
       method: "DELETE",
     })
       .then((resp) => {
+        dispatchHttp({ type: "RESPONSE" });
         dispatch({
           type: "DELETE",
           id: id,
@@ -78,15 +101,12 @@ const Ingredients = () => {
         // );
       })
       .catch((error) => {
-        setError(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
+        dispatchHttp({ type: "ERROR", error: error.message });
       });
   };
 
   const addIngredientHandler = (ingredient) => {
-    setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
 
     console.log("Saving ingredient: ", ingredient);
 
@@ -98,12 +118,11 @@ const Ingredients = () => {
       },
     })
       .then((resp) => {
-        setIsLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
         return resp.json();
       })
       .then((body) => {
         console.log("Saved ingredient name: ", body);
-
         dispatch({
           type: "ADD",
           ingredient: {
@@ -122,15 +141,17 @@ const Ingredients = () => {
       });
   };
 
-  const clearErrorHandler = () => setError();
+  const clearErrorHandler = () => dispatchHttp({ type: "CLEAR" });
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={clearErrorHandler}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={clearErrorHandler}>{httpState.error}</ErrorModal>
+      )}
 
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={isLoading}
+        loading={httpState.loading}
       />
 
       <section>
