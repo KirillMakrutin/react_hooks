@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer } from "react";
+import React, { useCallback, useReducer, useMemo } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -84,7 +84,7 @@ const Ingredients = () => {
     });
   }, []);
 
-  const removeIngredientHandler = (id) => {
+  const removeIngredientHandler = useCallback((id) => {
     dispatchHttp({ type: "SEND" });
 
     fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
@@ -103,9 +103,9 @@ const Ingredients = () => {
       .catch((error) => {
         dispatchHttp({ type: "ERROR", error: error.message });
       });
-  };
+  }, []);
 
-  const addIngredientHandler = (ingredient) => {
+  const addIngredientHandler = useCallback((ingredient) => {
     dispatchHttp({ type: "SEND" });
 
     console.log("Saving ingredient: ", ingredient);
@@ -139,9 +139,21 @@ const Ingredients = () => {
         //   },
         // ]);
       });
-  };
+  }, []);
 
-  const clearErrorHandler = () => dispatchHttp({ type: "CLEAR" });
+  const clearErrorHandler = useCallback(
+    () => dispatchHttp({ type: "CLEAR" }),
+    []
+  );
+
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList
+        ingredients={userIngredients}
+        onRemoveItem={removeIngredientHandler}
+      />
+    );
+  }, [userIngredients, removeIngredientHandler]);
 
   return (
     <div className="App">
@@ -156,10 +168,7 @@ const Ingredients = () => {
 
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
-        <IngredientList
-          ingredients={userIngredients}
-          onRemoveItem={removeIngredientHandler}
-        />
+        {ingredientList}
       </section>
     </div>
   );
