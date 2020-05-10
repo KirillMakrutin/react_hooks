@@ -5,6 +5,8 @@ import IngredientList from "./IngredientList";
 import ErrorModal from "../UI/ErrorModal";
 import Search from "./Search";
 
+import useHttp from "../hook/useHttp";
+
 // regular funtion is defined outside to not recreate during re-redner (it can also be located inside if we depends on props)
 const ingredientReducer = (currentIngredients, action) => {
   console.log("Currnet ingredients and action:", currentIngredients, action);
@@ -24,31 +26,12 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 };
 
-const httpReducer = (currentHttpState, action) => {
-  switch (action.type) {
-    case "SEND":
-      return { loading: true, error: null };
-    case "RESPONSE":
-      return { ...currentHttpState, loading: false };
-    case "ERROR":
-      return { loading: false, error: action.error };
-    case "CLEAR":
-      return {
-        ...currentHttpState,
-        error: null,
-      };
-    default:
-      throw new Error("Illegal Action!");
-  }
-};
-
 const Ingredients = () => {
   // 2nd arg is an initial state
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-  const [httpState, dispatchHttp] = useReducer(httpReducer, {
-    loading: false,
-    error: null,
-  });
+
+  // custom hook
+  const { loading, error, sendRequest, clearError } = useHttp();
 
   // const [userIngredients, setUserIngredients] = useState([]);
   // const [isLoading, setIsLoading] = useState(false);
@@ -84,66 +67,39 @@ const Ingredients = () => {
     });
   }, []);
 
-  const removeIngredientHandler = useCallback((id) => {
-    dispatchHttp({ type: "SEND" });
+  const removeIngredientHandler = useCallback(
+    (id) => {
+      sendRequest(
+        `${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`,
+        { method: "DELETE" },
+        () =>
+          dispatch({
+            type: "DELETE",
+            id: id,
+          })
+      );
+    },
+    [sendRequest]
+  );
 
-    fetch(`${process.env.REACT_APP_FB_URL}/ingredients/${id}.json`, {
-      method: "DELETE",
-    })
-      .then((resp) => {
-        dispatchHttp({ type: "RESPONSE" });
-        dispatch({
-          type: "DELETE",
-          id: id,
-        });
-        // setUserIngredients((previousUserIngredients) =>
-        //   previousUserIngredients.filter((ingredient) => ingredient.id !== id)
-        // );
-      })
-      .catch((error) => {
-        dispatchHttp({ type: "ERROR", error: error.message });
-      });
-  }, []);
-
-  const addIngredientHandler = useCallback((ingredient) => {
-    dispatchHttp({ type: "SEND" });
-
-    console.log("Saving ingredient: ", ingredient);
-
-    fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json`, {
-      method: "POST",
-      body: JSON.stringify(ingredient),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((resp) => {
-        dispatchHttp({ type: "RESPONSE" });
-        return resp.json();
-      })
-      .then((body) => {
-        console.log("Saved ingredient name: ", body);
-        dispatch({
-          type: "ADD",
-          ingredient: {
-            id: body.name,
-            ...ingredient,
-          },
-        });
-
-        // setUserIngredients((previousUserIngredients) => [
-        //   ...previousUserIngredients,
-        //   {
-        //     id: body.name,
-        //     ...ingredient,
-        //   },
-        // ]);
-      });
-  }, []);
-
-  const clearErrorHandler = useCallback(
-    () => dispatchHttp({ type: "CLEAR" }),
-    []
+  const addIngredientHandler = useCallback(
+    (ingredient) => {
+      sendRequest(
+        `${process.env.REACT_APP_FB_URL}/ingredients.json`,
+        { method: "POST", body: JSON.stringify(ingredient) },
+        (body) => {
+          console.log("Saved ingredient name: ", body);
+          dispatch({
+            type: "ADD",
+            ingredient: {
+              id: body.name,
+              ...ingredient,
+            },
+          });
+        }
+      );
+    },
+    [sendRequest]
   );
 
   const ingredientList = useMemo(() => {
@@ -157,17 +113,15 @@ const Ingredients = () => {
 
   return (
     <div className="App">
-      {httpState.error && (
-        <ErrorModal onClose={clearErrorHandler}>{httpState.error}</ErrorModal>
-      )}
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
 
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={httpState.loading}
+        loading={loading}
       />
 
       <section>
-        <Search onLoadIngredients={filteredIngredientsHandler} />
+        <Search sendRequest={sendRequest} onLoadIngredients={filteredIngredientsHandler} />
         {ingredientList}
       </section>
     </div>

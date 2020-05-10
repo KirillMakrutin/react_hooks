@@ -3,10 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 import Card from "../UI/Card";
 import "./Search.css";
 
-const Search = React.memo(({ onLoadIngredients }) => {
+const Search = React.memo(({ onLoadIngredients, sendRequest }) => {
   const [enteredFilter, setEnteredFilter] = useState("");
   const inputRef = useRef();
-
   useEffect(() => {
     // to make it works you should add FB rule:
     // "ingredients":{
@@ -19,9 +18,11 @@ const Search = React.memo(({ onLoadIngredients }) => {
           enteredFilter.length === 0
             ? ""
             : `?orderBy="title"&equalTo="${enteredFilter}"`;
-        fetch(`${process.env.REACT_APP_FB_URL}/ingredients.json${query}`)
-          .then((resp) => resp.json())
-          .then((respData) => {
+
+        sendRequest(
+          `${process.env.REACT_APP_FB_URL}/ingredients.json${query}`,
+          { method: "GET" },
+          (respData) => {
             const loadedIngredients = [];
 
             for (let key in respData) {
@@ -32,7 +33,8 @@ const Search = React.memo(({ onLoadIngredients }) => {
             }
 
             onLoadIngredients(loadedIngredients);
-          });
+          }
+        );
       }
     }, 500);
 
@@ -40,7 +42,7 @@ const Search = React.memo(({ onLoadIngredients }) => {
       // this function is executed berfore the next useEffect runs (if [] as a dependecny - before unmount)
       clearTimeout(timer);
     };
-  }, [enteredFilter, onLoadIngredients, inputRef]);
+  }, [enteredFilter, onLoadIngredients, inputRef, sendRequest]);
 
   return (
     <section className="search">
